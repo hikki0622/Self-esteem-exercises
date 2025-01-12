@@ -1,0 +1,233 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@componentsuicard';
+import { Button } from '@componentsuibutton';
+import { AlertCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const SelfEsteemPractice = () = {
+  const questions = {
+    '有意識的生活' [
+      '有意識地生活對我來說意味著_____',
+      '假如我在今天的行動中提高5%的意識水平，________',
+      '如果我今天多注意一下與人相處的方式，________',
+      '如果我對我最重要的人際關係提高5%的意識水平，______'
+    ],
+    '自我接納' [
+      '如果我能更多地接納自己的身體，_____',
+      '如果我能更好地接納自己的衝突，_____',
+      '如果我能更多地接納自己的感受，_____',
+      '如果我能更多地接納自己的想法，_____'
+    ],
+    '自我負責' [
+      '當我逃避為自我存在負責時，_____',
+      '如果我為實現自己的目標多承擔5%的責任，_____',
+      '如果我更深刻地認識自己動機背後的觀點，_____',
+      '如果我來到世上不是為了滿足別人的期望，_____',
+      '如果我不再謊稱自己無法改變，_____',
+      '如果沒有人來拯救我，_____'
+    ],
+    '自我肯定' [
+      '如果我今天能多展現出5%的自我，____',
+      '當我隱藏真正的自我時，____',
+      '如果我想活得更完整，____'
+    ],
+    '有目的地生活' [
+      '如果我在今天的生活中增加5%的目的性，_____',
+      '如果我在交流中增加5%的目的性，____',
+      '如果我在工作關係中增加5%的目的性，____'
+    ],
+    '個人誠信' [
+      '如果我在生活中增加5%的誠信，____',
+      '如果我終於自己堅信其正確性的價值觀，_____'
+    ]
+  };
+
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [date, setDate] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
+
+   選擇今日的隨機問題
+  const selectRandomQuestions = () = {
+    const allQuestions = [];
+    Object.entries(questions).forEach(([category, questionList]) = {
+      questionList.forEach(question = {
+        allQuestions.push({ category, question });
+      });
+    });
+    
+    const shuffled = [...allQuestions].sort(() = 0.5 - Math.random());
+    const numQuestions = Math.floor(Math.random()  3) + 1;
+    return shuffled.slice(0, numQuestions);
+  };
+
+   載入歷史記錄
+  useEffect(() = {
+    const savedHistory = localStorage.getItem('selfEsteemHistory');
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
+  }, []);
+
+   初始化今日日期和問題
+  useEffect(() = {
+    const today = new Date().toLocaleDateString();
+    setDate(today);
+    setSelectedQuestions(selectRandomQuestions());
+  }, []);
+
+  const handleAnswerChange = (question, value) = {
+    setAnswers(prev = ({
+      ...prev,
+      [question] value
+    }));
+  };
+
+  const handleSubmit = () = {
+    const newEntry = {
+      date date,
+      questions selectedQuestions,
+      answers answers
+    };
+
+    const updatedHistory = [...history, newEntry];
+    setHistory(updatedHistory);
+    localStorage.setItem('selfEsteemHistory', JSON.stringify(updatedHistory));
+    
+    setSubmitted(true);
+  };
+
+  const handleNewQuestions = () = {
+    setSelectedQuestions(selectRandomQuestions());
+    setAnswers({});
+    setSubmitted(false);
+    setShowHistory(false);
+  };
+
+  const toggleHistory = () = {
+    setShowHistory(!showHistory);
+    setCurrentHistoryIndex(history.length - 1);
+  };
+
+  const navigateHistory = (direction) = {
+    const newIndex = currentHistoryIndex + direction;
+    if (newIndex = 0 && newIndex  history.length) {
+      setCurrentHistoryIndex(newIndex);
+    }
+  };
+
+   歷史記錄檢視組件
+  const HistoryView = () = {
+    if (history.length === 0) {
+      return div className=text-center py-4還沒有歷史記錄div;
+    }
+
+    const entry = history[currentHistoryIndex];
+    return (
+      div
+        div className=flex justify-between items-center mb-4
+          Button 
+            variant=outline 
+            onClick={() = navigateHistory(-1)}
+            disabled={currentHistoryIndex === 0}
+          
+            ChevronLeft className=w-4 h-4 
+          Button
+          span className=font-medium{entry.date}span
+          Button 
+            variant=outline 
+            onClick={() = navigateHistory(1)}
+            disabled={currentHistoryIndex === history.length - 1}
+          
+            ChevronRight className=w-4 h-4 
+          Button
+        div
+
+        {entry.questions.map(({ category, question }, index) = (
+          div key={index} className=mb-4
+            div className=font-medium text-gray-700{category}div
+            div className=mb-1{question}div
+            div className=p-2 bg-gray-50 rounded{entry.answers[question]}div
+          div
+        ))}
+      div
+    );
+  };
+
+  return (
+    Card className=w-full max-w-2xl mx-auto
+      CardHeader
+        CardTitle className=text-center flex justify-between items-center
+          span每日自尊練習span
+          Button
+            variant=outline
+            onClick={toggleHistory}
+            className=flex items-center gap-2
+          
+            Calendar className=w-4 h-4 
+            {showHistory  '返回練習'  '查看歷史'}
+          Button
+        CardTitle
+        p className=text-center text-gray-500{date}p
+      CardHeader
+      CardContent
+        {showHistory  (
+          HistoryView 
+        )  (
+          
+            div className=mb-6
+              div className=flex items-center mb-4 text-blue-600
+                AlertCircle className=w-5 h-5 mr-2 
+                span今日練習題目（請依照直覺填寫6-10個字）span
+              div
+              
+              {selectedQuestions.map(({ category, question }, index) = (
+                div key={index} className=mb-6
+                  div className=font-medium text-gray-700 mb-2{category}div
+                  div className=mb-2{question}div
+                  textarea
+                    className=w-full p-2 border rounded-md
+                    rows=3
+                    placeholder=請填寫你的答案...
+                    value={answers[question]  ''}
+                    onChange={(e) = handleAnswerChange(question, e.target.value)}
+                    disabled={submitted}
+                  
+                div
+              ))}
+            div
+
+            div className=space-y-4
+              {!submitted  (
+                Button 
+                  className=w-full 
+                  onClick={handleSubmit}
+                  disabled={Object.keys(answers).length !== selectedQuestions.length}
+                
+                  完成今日練習
+                Button
+              )  (
+                
+                  div className=text-center text-green-600 mb-4
+                    ✨ 太棒了！你完成了今天的自尊練習 ✨
+                  div
+                  Button 
+                    className=w-full 
+                    variant=outline
+                    onClick={handleNewQuestions}
+                  
+                    產生新的練習題目
+                  Button
+                
+              )}
+            div
+          
+        )}
+      CardContent
+    Card
+  );
+};
+
+export default SelfEsteemPractice;
